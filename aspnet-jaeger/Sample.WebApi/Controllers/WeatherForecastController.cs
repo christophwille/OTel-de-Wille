@@ -19,8 +19,22 @@ namespace Sample.WebApi.Controllers
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        public IEnumerable<WeatherForecast> Get([FromServices] SqliteBloggingContext db)
         {
+            using (var activity = DiagnosticsConfig.ActivitySource.StartActivity("WorkingWithDb"))
+            {
+                db.Add(new Blog { Url = "http://blogs.msdn.com/adonet" });
+                db.SaveChanges();
+
+                var blog = db.Blogs
+                    .OrderBy(b => b.BlogId)
+                    .First();
+
+                blog.Url = "https://devblogs.microsoft.com/dotnet";
+                blog.Posts.Add(new Post { Title = "Hello World", Content = "I wrote an app using EF Core!" });
+                db.SaveChanges();
+            }
+
             using (var activity = DiagnosticsConfig.ActivitySource.StartActivity("BuildWeatherForecastResult"))
             {
                 return Enumerable.Range(1, 5).Select(index => new WeatherForecast

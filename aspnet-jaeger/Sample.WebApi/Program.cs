@@ -3,9 +3,15 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Sample.WebApi;
 
+using var db = new SqliteBloggingContext();
+await db.Database.EnsureDeletedAsync();
+await db.Database.EnsureCreatedAsync();
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<SqliteBloggingContext>();
 
 // https://opentelemetry.io/docs/instrumentation/net/getting-started/
+// https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracerProviderBuilder =>
         tracerProviderBuilder
@@ -21,6 +27,15 @@ builder.Services.AddOpenTelemetry()
             })
             .AddHttpClientInstrumentation()
             .AddSqlClientInstrumentation()
+            .AddEntityFrameworkCoreInstrumentation(options =>
+            {
+                options.EnrichWithIDbCommand = (activity, command) =>
+                {
+                    var stateDisplayName = $"{command.CommandType} main";
+                    activity.DisplayName = stateDisplayName;
+                    activity.SetTag("db.name", stateDisplayName);
+                };
+            })
             .AddAspNetCoreInstrumentation(options =>
             {
                 options.RecordException = true;
