@@ -1,7 +1,7 @@
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System.Diagnostics;
+using Sample.WebApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +10,21 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracerProviderBuilder =>
         tracerProviderBuilder
             .AddSource(DiagnosticsConfig.ActivitySource.Name)
-            .ConfigureResource(r => r.AddService(DiagnosticsConfig.ServiceName))
-            .AddAspNetCoreInstrumentation()
+            .ConfigureResource(r =>
+            {
+                r.AddService(DiagnosticsConfig.ServiceName, serviceVersion: DiagnosticsConfig.GetVersion());
+                r.AddAttributes(new Dictionary<string, object>
+                {
+                    ["host.name"] = Environment.MachineName,
+                    ["deployment.environment"] = builder.Environment.EnvironmentName.ToLowerInvariant(),
+                });
+            })
+            .AddHttpClientInstrumentation()
+            .AddSqlClientInstrumentation()
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.RecordException = true;
+            })
             .AddJaegerExporter());
 //.WithMetrics(metricsProviderBuilder =>
 //   metricsProviderBuilder
@@ -37,9 +50,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-public static class DiagnosticsConfig
-{
-    public const string ServiceName = "Bad Pun Service";
-    public static ActivitySource ActivitySource = new ActivitySource(ServiceName);
-}
