@@ -21,5 +21,18 @@ namespace Sample.WebApi
         // Settable Saas Tenant (eg)
         public static string SaasTenant = "";
         public static string GetSaasTenant() => SaasTenant;
+
+        public static string GetWebSiteInstanceId()
+        {
+            // For Azure will be a dash-less guid like e64634d070057a8ee5b9b991a4b10eff42286c68899f006fcdb23a9b436cddc6
+            string? instanceId = Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID");
+
+            if (String.IsNullOrWhiteSpace(instanceId)) // Happens locally / in dev
+            {
+                instanceId = "local";
+            }
+
+            return instanceId;
+        }
     }
 }

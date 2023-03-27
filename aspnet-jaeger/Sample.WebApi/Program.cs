@@ -14,6 +14,7 @@ builder.Services.AddDbContext<SqliteBloggingContext>();
 // https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracerProviderBuilder =>
+    {
         tracerProviderBuilder
             .AddSource(DiagnosticsConfig.ActivitySource.Name)
             .ConfigureResource(r =>
@@ -40,7 +41,13 @@ builder.Services.AddOpenTelemetry()
             {
                 options.RecordException = true;
             })
-            .AddJaegerExporter());
+            .AddJaegerExporter();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            // eg: tracerProviderBuilder.AddConsoleExporter();
+        }
+    });
 //.WithMetrics(metricsProviderBuilder =>
 //   metricsProviderBuilder
 //       .ConfigureResource(resource => resource
