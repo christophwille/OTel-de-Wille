@@ -21,6 +21,15 @@ public class SqliteBloggingContext : DbContext
         => options.UseSqlite($"Data Source={DbPath}");
 }
 
+public class SqlServerBloggingContext : DbContext
+{
+    public DbSet<Blog> Blogs { get; set; }
+    public DbSet<Post> Posts { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+        => options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=BloggingDemo;Trusted_Connection=True;MultipleActiveResultSets=true");
+}
+
 public class Blog
 {
     public int BlogId { get; set; }

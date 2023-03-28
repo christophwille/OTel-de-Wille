@@ -7,8 +7,13 @@ using var db = new SqliteBloggingContext();
 await db.Database.EnsureDeletedAsync();
 await db.Database.EnsureCreatedAsync();
 
+using var sqlDb = new SqlServerBloggingContext();
+await sqlDb.Database.EnsureDeletedAsync();
+await sqlDb.Database.EnsureCreatedAsync();
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<SqliteBloggingContext>();
+builder.Services.AddDbContext<SqlServerBloggingContext>();
 
 // https://opentelemetry.io/docs/instrumentation/net/getting-started/
 // https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.Instrumentation.EntityFrameworkCore
