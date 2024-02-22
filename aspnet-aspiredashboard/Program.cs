@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using OTelPlayground;
 using System.Diagnostics;
 
@@ -60,11 +61,31 @@ app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
     catch (Exception ex)
     {
         logger.LogError(ex, "Something bad happened");
+
+        // Note: You need "using OpenTelemetry.Trace" (OpenTelemetry package) because it is an extension method
+        // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/trace/reporting-exceptions/README.md
+        Activity.Current?.RecordException(ex);
     }
 
     return "done";
 })
 .WithName("ExceptionTest")
+.WithOpenApi();
+
+app.MapGet("/errortest", () =>
+{
+    using var activity = DiagnosticsConfig.ActivitySource.StartActivity("StatusDemo");
+
+    // https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-instrumentation-walkthroughs#optional-add-status
+    //activity?.SetTag("otel.status_code", "ERROR");
+    //activity?.SetTag("otel.status_description", "Use this text give more information about the error");
+
+    // Better way (.NET way)
+    activity?.SetStatus(ActivityStatusCode.Error, "Use this text give more information about the error");
+
+    return "done";
+})
+.WithName("ErrorTest")
 .WithOpenApi();
 
 app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [FromServices] SqlServerBloggingContext sqlServerDb, HttpContext context) =>
