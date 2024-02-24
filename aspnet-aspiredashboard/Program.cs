@@ -164,7 +164,7 @@ app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [Fro
         sqlServerDb.Add(new Blog { Url = "http://blogs.msdn.com/adonet" });
         await sqlServerDb.SaveChangesAsync();
 
-        // TagWith basics: https://learn.microsoft.com/en-us/ef/core/querying/tags
+        // TagWith basics: https://learn.microsoft.com/en-us/ef/core/querying/tags (NOTE: That writes a comment to the SQL query sent to SQL Server, not OTel)
         // TagWithSource extension: https://itnext.io/practical-query-tagging-in-ef-core-ad0b38fa3436
         var blog = await sqlServerDb.Blogs
             .OrderBy(b => b.BlogId)
