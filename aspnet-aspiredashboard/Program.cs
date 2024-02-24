@@ -1,4 +1,6 @@
+using Azure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OTelPlayground;
@@ -30,14 +32,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
-app.MapGet("/weatherforecast", () =>
+// Don't do anything OpenTelemetry'ish
+app.MapGet("/noactivity", () =>
 {
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
@@ -49,9 +52,10 @@ app.MapGet("/weatherforecast", () =>
         .ToArray();
     return forecast;
 })
-.WithName("GetWeatherForecast")
+.WithName("NoActivity")
 .WithOpenApi();
 
+// Record an exception
 app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
 {
     try
@@ -72,6 +76,7 @@ app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
 .WithName("ExceptionTest")
 .WithOpenApi();
 
+// Report an error
 app.MapGet("/errortest", () =>
 {
     using var activity = DiagnosticsConfig.ActivitySource.StartActivity("StatusDemo");
@@ -88,6 +93,52 @@ app.MapGet("/errortest", () =>
 .WithName("ErrorTest")
 .WithOpenApi();
 
+// Call an unsuccessful HTTP API, report error
+app.MapGet("/nestedhttp", async () =>
+{
+    using var activity = DiagnosticsConfig.ActivitySource.StartActivity("NestedHttpDemo");
+
+    var httpClient = new HttpClient();
+    var response = await httpClient.GetAsync("http://httpstat.us/500");
+
+    if (!response.IsSuccessStatusCode)
+    {
+        activity?.SetStatus(ActivityStatusCode.Error, "Use this text give more information about the error");
+    }
+
+    return "done";
+})
+.WithName("NestedHttp")
+.WithOpenApi();
+
+// Same as NestedHttp, report error and then however throw (and catch) exception
+app.MapGet("/nestedhttpwithex", async () =>
+{
+    using var activity = DiagnosticsConfig.ActivitySource.StartActivity("NestedHttpDemo");
+
+    var httpClient = new HttpClient();
+    var response = await httpClient.GetAsync("http://httpstat.us/500");
+
+    try
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, "Use this text give more information about the error");
+
+            throw new HttpRequestException("Something went wrong with the request", null, System.Net.HttpStatusCode.BadRequest);
+        }
+    }
+    catch (Exception ex)
+    {
+        // do nothing
+    }
+
+    return "done";
+})
+.WithName("NestedHttpWithEx")
+.WithOpenApi();
+
+// Couple of nested actvities with databases
 app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [FromServices] SqlServerBloggingContext sqlServerDb, HttpContext context) =>
 {
     using (var activity = DiagnosticsConfig.ActivitySource.StartActivity("WorkingWithSqlite"))
@@ -113,9 +164,12 @@ app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [Fro
         sqlServerDb.Add(new Blog { Url = "http://blogs.msdn.com/adonet" });
         await sqlServerDb.SaveChangesAsync();
 
-        var blog = sqlServerDb.Blogs
+        // TagWith basics: https://learn.microsoft.com/en-us/ef/core/querying/tags
+        // TagWithSource extension: https://itnext.io/practical-query-tagging-in-ef-core-ad0b38fa3436
+        var blog = await sqlServerDb.Blogs
             .OrderBy(b => b.BlogId)
-            .First();
+            .TagWith("Getting published blog posts")
+            .FirstAsync();
 
         blog.Url = "https://devblogs.microsoft.com/dotnet";
         blog.Posts.Add(new Post { Title = "Hello World", Content = "I wrote an app using EF Core!" });
