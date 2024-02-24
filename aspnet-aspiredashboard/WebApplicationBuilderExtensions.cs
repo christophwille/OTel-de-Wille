@@ -61,12 +61,17 @@ public static class WebApplicationBuilderExtensions
                     // .AddSqlClientInstrumentation()
                     .AddEntityFrameworkCoreInstrumentation(options =>
                     {
-                        //options.EnrichWithIDbCommand = (activity, command) =>
-                        //{
-                        //    var stateDisplayName = $"{command.CommandType} main";
-                        //    activity.DisplayName = stateDisplayName;
-                        //    activity.SetTag("db.name", stateDisplayName);
-                        //};
+                        options.EnrichWithIDbCommand = (activity, command) =>
+                        {
+                            // A very hacky way to transfer WithTag (one liners)
+                            string cmdText = command.CommandText;
+                            if (cmdText.StartsWith("-- "))
+                            {
+                                string tag = cmdText.Substring(3, cmdText.IndexOf('\n') - 4);
+                                activity.SetTag("db.tag", tag);
+                            }
+
+                        };
                     })
                     .AddOtlpExporter();
 
