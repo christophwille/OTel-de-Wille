@@ -1,6 +1,7 @@
 using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OTelPlayground;
@@ -53,6 +54,35 @@ app.MapGet("/noactivity", () =>
     return forecast;
 })
 .WithName("NoActivity")
+.WithOpenApi();
+
+// Play with Logger BeginScope
+app.MapGet("/loggerbeginscope", ([FromServices] ILogger<Program> logger) =>
+{
+    using (logger.BeginScope("Static scope string"))
+    {
+        logger.LogInformation("Processing...");
+        logger.LogInformation("even more processing...");
+    }
+
+    using (logger.BeginScope("String with {CustomerId}", 4711))
+    {
+        logger.LogInformation("Processing...");
+        logger.LogInformation("even more processing...");
+    }
+
+    // Scope till the end with a dictionary
+    using var _ = logger.BeginScope(new Dictionary<string, object>
+    {
+        ["CustomerId"] = 4711
+    });
+
+    logger.LogInformation("Processing...");
+    logger.LogInformation("even more processing...");
+
+    return "done";
+})
+.WithName("LoggerBeginScope")
 .WithOpenApi();
 
 // Record an exception
