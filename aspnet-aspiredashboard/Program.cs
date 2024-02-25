@@ -227,6 +227,8 @@ app.Run();
 static void SomeOtherMethod()
 {
     // https://learn.microsoft.com/en-us/dotnet/core/diagnostics/distributed-tracing-instrumentation-walkthroughs#optional-populate-tags
-    // https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/trace/semantic_conventions
+
+    // https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/trace.md
+    // https://github.com/open-telemetry/semantic-conventions/blob/main/docs/general/attributes.md section General
     Activity.Current?.SetTag("code.function", nameof(SomeOtherMethod));
 }
