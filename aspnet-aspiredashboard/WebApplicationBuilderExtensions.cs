@@ -67,10 +67,13 @@ public static class WebApplicationBuilderExtensions
                             string cmdText = command.CommandText;
                             if (cmdText.StartsWith("-- "))
                             {
-                                string tag = cmdText.Substring(3, cmdText.IndexOf('\n') - 4);
-                                activity.SetTag("db.tag", tag);
+                                var lengthOfTag = cmdText.IndexOf('\n') - 4;
+                                if (lengthOfTag > 0)
+                                {
+                                    string tag = cmdText.Substring(3, lengthOfTag);
+                                    activity.SetTag("db.tag", tag);
+                                }
                             }
-
                         };
                     })
                     .AddOtlpExporter();
