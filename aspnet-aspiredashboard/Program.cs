@@ -199,6 +199,7 @@ app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [Fro
         var blog = await sqlServerDb.Blogs
             .OrderBy(b => b.BlogId)
             .TagWith("Getting published blog posts")
+            .TagWithCallSite()
             .FirstAsync();
 
         blog.Url = "https://devblogs.microsoft.com/dotnet";
