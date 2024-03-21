@@ -51,6 +51,7 @@ public static class WebApplicationBuilderExtensions
             {
                 tracerProviderBuilder
                     .AddSource(ActivitySourceName)
+                    .AddProcessor<TenantInformationEnricherProcessor>()
                     .SetErrorStatusOnException()
                     .SetSampler(new AlwaysOnSampler())
                     .AddAspNetCoreInstrumentation(options =>
