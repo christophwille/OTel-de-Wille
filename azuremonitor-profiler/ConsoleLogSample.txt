@@ -1,0 +1,26 @@
+info: Microsoft.ApplicationInsights.Profiler.Shared.Services.TraceScavenger.TraceScavengerService[0]
+      TraceScavengerService started. Initial delay: 00:00:00, Grace period from last access: 00:10:00
+info: Microsoft.ApplicationInsights.Profiler.Shared.Services.TraceScavenger.TraceScavengerListener[0]
+      File scavenger started.
+info: Azure.Monitor.OpenTelemetry.Profiler.AspNetCore.ServiceProfilerAgentBootstrap[0]
+      Starting application insights profiler with connection string: REDACTED
+info: Azure.Monitor.OpenTelemetry.Profiler.Core.DiagnosticsClientTrace[0]
+      Start writing trace file C:\Users\christophw\AppData\Local\Temp\SPTraces\9e05a3e7-8aa3-4337-a78f-a689d4790197.nettrace...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:7022
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5031
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\GitWorkspace\OTel-de-Wille\azuremonitor-profiler
+info: Azure.Monitor.OpenTelemetry.Profiler.Core.EventListeners.TraceSessionListener[0]
+      Activity detected.
+info: Azure.Monitor.OpenTelemetry.Profiler.Core.DiagnosticsClientTrace[0]
+      Finished writing trace file C:\Users\christophw\AppData\Local\Temp\SPTraces\9e05a3e7-8aa3-4337-a78f-a689d4790197.nettrace.
+info: Azure.Monitor.OpenTelemetry.Profiler.Core.TraceUploaderProxy[0]
+      Uploader to be used: C:\Users\christophw\AppData\Local\Temp\ServiceProfiler\99.2024.1218.39221\Uploader\Microsoft.ApplicationInsights.Profiler.Uploader.dll
+info: Azure.Monitor.OpenTelemetry.Profiler.Core.TraceUploaderProxy[0]
+      Call upload trace finished. Exit code: 0
