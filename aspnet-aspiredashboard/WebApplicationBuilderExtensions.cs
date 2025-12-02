@@ -25,6 +25,7 @@ public static class WebApplicationBuilderExtensions
 
             options.SetResourceBuilder(resourceBuilderFunc());
             options.AddProcessor(new CustomLogRecordEnricherProcessor());
+            // options.AddProcessor(sp => sp.GetRequiredService<CustomLogRecordEnricherProcessor>()); // with DI
 
             // options.AddConsoleExporter();
             options.AddOtlpExporter();
@@ -53,7 +54,7 @@ public static class WebApplicationBuilderExtensions
             {
                 tracerProviderBuilder
                     .AddSource(ActivitySourceName)
-                    .AddProcessor<CustomActivityEnricherProcessor>()
+                    .AddProcessor<CustomActivityEnricherProcessor>() // auto-DI
                     .SetErrorStatusOnException()
                     .SetSampler(new AlwaysOnSampler())
                     .AddAspNetCoreInstrumentation(options =>
