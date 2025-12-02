@@ -7,6 +7,9 @@ using OpenTelemetry.Trace;
 using OTelPlayground;
 using System.Diagnostics;
 
+// https://aspire.dev/dashboard/overview/#standalone-mode
+// podman run --rm -it -p 18888:18888 -p 4317:18889 -d --name aspire-dashboard mcr.microsoft.com/dotnet/aspire-dashboard:latest
+
 using var db = new SqliteBloggingContext();
 await db.Database.EnsureDeletedAsync();
 await db.Database.EnsureCreatedAsync();
@@ -98,7 +101,7 @@ app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
 
         // Note: You need "using OpenTelemetry.Trace" (OpenTelemetry package) because it is an extension method
         // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/trace/reporting-exceptions/README.md
-        Activity.Current?.RecordException(ex);
+        Activity.Current?.AddException(ex);
     }
 
     return "done";
