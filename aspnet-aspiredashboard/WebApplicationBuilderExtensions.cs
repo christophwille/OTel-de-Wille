@@ -24,6 +24,8 @@ public static class WebApplicationBuilderExtensions
             options.ParseStateValues = true;
 
             options.SetResourceBuilder(resourceBuilderFunc());
+            options.AddProcessor(new CustomLogRecordEnricherProcessor());
+
             // options.AddConsoleExporter();
             options.AddOtlpExporter();
         });
@@ -51,7 +53,7 @@ public static class WebApplicationBuilderExtensions
             {
                 tracerProviderBuilder
                     .AddSource(ActivitySourceName)
-                    .AddProcessor<TenantInformationEnricherProcessor>()
+                    .AddProcessor<CustomActivityEnricherProcessor>()
                     .SetErrorStatusOnException()
                     .SetSampler(new AlwaysOnSampler())
                     .AddAspNetCoreInstrumentation(options =>

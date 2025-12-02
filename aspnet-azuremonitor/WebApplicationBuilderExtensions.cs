@@ -40,7 +40,6 @@ public static class WebApplicationBuilderExtensions
                 tracerProviderBuilder
                     .AddSource(ActivitySourceName)
                     .SetErrorStatusOnException()
-                    .AddLiveMetrics() // Azure Monitor
                     .SetSampler(new AlwaysOnSampler())
                     .AddAspNetCoreInstrumentation(options =>
                     {

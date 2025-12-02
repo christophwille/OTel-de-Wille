@@ -2,6 +2,7 @@
 using System.Reflection;
 
 namespace OTelPlayground;
+
 public static class DiagnosticsConfig
 {
     public const string ServiceName = "Bad Pun Service";
@@ -18,7 +19,7 @@ public static class DiagnosticsConfig
     }
 
     // Settable Saas Tenant (eg)
-    public static string SaasTenant = "";
+    public static string SaasTenant = "notset";
     public static string GetSaasTenant() => SaasTenant;
 
     public static string GetWebSiteInstanceId()

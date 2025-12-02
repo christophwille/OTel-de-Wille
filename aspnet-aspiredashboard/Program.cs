@@ -28,6 +28,7 @@ builder.Services.AddSwaggerGen();
 builder.AddCommonOTelLogging(() => ResourceBuilder.CreateDefault().AddService(DiagnosticsConfig.ActivitySource.Name));
 builder.AddCommonOTelMonitoring(DiagnosticsConfig.ServiceName, DiagnosticsConfig.GetVersion(), DiagnosticsConfig.ActivitySource.Name);
 
+DiagnosticsConfig.SaasTenant = "4711";
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
