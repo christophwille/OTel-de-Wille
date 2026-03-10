@@ -5,7 +5,8 @@ using OTelPlayground;
 using System.Diagnostics;
 
 // https://aspire.dev/dashboard/overview/#standalone-mode
-// podman run --rm -it -p 18888:18888 -p 4317:18889 -d --name aspire-dashboard mcr.microsoft.com/dotnet/aspire-dashboard:latest
+// interactive: podman run --rm -it -p 18888:18888 -p 4317:18889 mcr.microsoft.com/dotnet/aspire-dashboard:latest
+// daemon: podman run --rm -d -p 18888:18888 -p 4317:18889 --name aspire-dashboard mcr.microsoft.com/dotnet/aspire-dashboard:latest
 
 using var db = new SqliteBloggingContext();
 await db.Database.EnsureDeletedAsync();
@@ -16,6 +17,9 @@ await sqlDb.Database.EnsureDeletedAsync();
 await sqlDb.Database.EnsureCreatedAsync();
 
 var builder = WebApplication.CreateBuilder(args);
+var logger = builder.CreateContainerStartupLogger<Program>();
+logger.LogInformation("We are starting...");
+
 builder.Services.AddDbContext<SqliteBloggingContext>();
 builder.Services.AddDbContext<SqlServerBloggingContext>();
 

@@ -12,6 +12,17 @@ namespace OTelPlayground;
 
 public static class WebApplicationBuilderExtensions
 {
+    public static ILogger CreateContainerStartupLogger<T>(this IHostApplicationBuilder builder)
+    {
+        var loggerFactory = LoggerFactory.Create(i =>
+        {
+            i.AddConfiguration(builder.Configuration.GetSection("Logging"));
+            i.AddConsole();
+        });
+
+        return loggerFactory.CreateLogger<T>();
+    }
+
     // https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/logs/getting-started-aspnetcore/Program.cs
     public static void AddCommonOTelLogging(this WebApplicationBuilder builder, Func<ResourceBuilder> resourceBuilderFunc)
     {
