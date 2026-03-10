@@ -1,9 +1,6 @@
-using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using OTelPlayground;
 using System.Diagnostics;
 
@@ -57,8 +54,7 @@ app.MapGet("/noactivity", () =>
         .ToArray();
     return forecast;
 })
-.WithName("NoActivity")
-.WithOpenApi();
+.WithName("NoActivity");
 
 // Play with Logger BeginScope
 app.MapGet("/loggerbeginscope", ([FromServices] ILogger<Program> logger) =>
@@ -86,8 +82,7 @@ app.MapGet("/loggerbeginscope", ([FromServices] ILogger<Program> logger) =>
 
     return "done";
 })
-.WithName("LoggerBeginScope")
-.WithOpenApi();
+.WithName("LoggerBeginScope");
 
 // Record an exception
 app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
@@ -107,8 +102,7 @@ app.MapGet("/exceptiontest", ([FromServices] ILogger<Program> logger) =>
 
     return "done";
 })
-.WithName("ExceptionTest")
-.WithOpenApi();
+.WithName("ExceptionTest");
 
 // Report an error
 app.MapGet("/errortest", () =>
@@ -124,8 +118,7 @@ app.MapGet("/errortest", () =>
 
     return "done";
 })
-.WithName("ErrorTest")
-.WithOpenApi();
+.WithName("ErrorTest");
 
 // Call an unsuccessful HTTP API, report error
 app.MapGet("/nestedhttp", async () =>
@@ -142,8 +135,7 @@ app.MapGet("/nestedhttp", async () =>
 
     return "done";
 })
-.WithName("NestedHttp")
-.WithOpenApi();
+.WithName("NestedHttp");
 
 // Same as NestedHttp, report error and then however throw (and catch) exception
 app.MapGet("/nestedhttpwithex", async () =>
@@ -169,8 +161,7 @@ app.MapGet("/nestedhttpwithex", async () =>
 
     return "done";
 })
-.WithName("NestedHttpWithEx")
-.WithOpenApi();
+.WithName("NestedHttpWithEx");
 
 // Couple of nested actvities with databases
 app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [FromServices] SqlServerBloggingContext sqlServerDb, HttpContext context) =>
@@ -222,8 +213,7 @@ app.MapGet("/dbtest", async ([FromServices] SqliteBloggingContext sqliteDb, [Fro
         .ToArray();
     }
 })
-.WithName("DbTest")
-.WithOpenApi();
+.WithName("DbTest");
 
 
 app.Run();
