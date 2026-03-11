@@ -1,10 +1,14 @@
+using OpenTelemetry.Resources;
+using OTelWithSerilog.Monitoring;
 using Serilog;
+using System.Diagnostics;
 
 // Test-URL: https://localhost:7217/weatherforecast
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.ConfigureDiagnosticsConfig();
 
 // https://www.nuget.org/packages/Serilog.Sinks.OpenTelemetry/#readme-body-tab
 // The following Serilog:WriteTo in appsettings.json is sufficient to make logs show up in Aspire Dashboard
@@ -16,6 +20,9 @@ builder.Services.AddSerilog((services, loggerConfiguration) =>
             .Configuration(builder.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext());
+
+
+builder.AddTracingAndMetrics(() => new(DiagnosticsConfig.ServiceName, DiagnosticsConfig.Version, DiagnosticsConfig.ActivitySource.Name, []));
 
 
 builder.Services.AddOpenApi();
@@ -37,6 +44,18 @@ var summaries = new[]
 app.MapGet("/weatherforecast", (ILogger<Program> logger) =>
 {
     logger.LogInformation("Entering {Endpoint} endpoint", "GetWeatherForecast");
+
+    try
+    {
+        throw new ArgumentException("Having an argument");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Something bad happened");
+        Activity.Current?.AddException(ex);
+    }
+
+    Activity.Current?.AddEvent(new ActivityEvent("And now for the real work"));
 
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
