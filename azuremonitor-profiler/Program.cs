@@ -1,5 +1,5 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
-using Azure.Monitor.OpenTelemetry.Profiler.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Profiler;
 using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +9,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddOpenTelemetry()
         .UseAzureMonitor()
-        .UseProfiler();
+        .AddAzureMonitorProfiler();
 
 var app = builder.Build();
 
@@ -40,8 +40,7 @@ app.MapGet("/weatherforecast", () =>
         .ToArray();
     return forecast;
 })
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+.WithName("GetWeatherForecast");
 
 app.Run();
 
