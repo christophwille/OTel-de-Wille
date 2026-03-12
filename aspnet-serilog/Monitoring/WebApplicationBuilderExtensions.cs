@@ -30,8 +30,8 @@ public static class WebApplicationBuilderExtensions
 
     private static bool SendToAzureMonitor(IHostApplicationBuilder builder)
     {
-        return !string.IsNullOrWhiteSpace(EnvGetAzureMonitorConnectionString(builder)) ||
-            !string.IsNullOrWhiteSpace(SettingsGetAzureMonitorConnectionString(builder));
+        return !string.IsNullOrWhiteSpace(SettingsGetAzureMonitorConnectionString(builder)) ||
+            !string.IsNullOrWhiteSpace(EnvGetAzureMonitorConnectionString(builder));
     }
 
     private static string GetAzureMonitorConnectionString(IHostApplicationBuilder builder)
