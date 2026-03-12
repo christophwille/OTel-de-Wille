@@ -45,7 +45,6 @@ app.MapGet("/noactivity", () =>
         .ToArray();
     return forecast;
 })
-.WithName("NoActivity")
-.WithOpenApi();
+.WithName("NoActivity");
 
 app.Run();
