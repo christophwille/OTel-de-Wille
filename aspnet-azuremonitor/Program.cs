@@ -33,8 +33,7 @@ app.MapGet("/nestedhttp", async () =>
 
     return "done";
 })
-.WithName("NestedHttp")
-.WithOpenApi();
+.WithName("NestedHttp");
 
 // Only some stubs of recording activity and events
 app.MapGet("/generictest", (HttpContext context) =>
@@ -44,7 +43,6 @@ app.MapGet("/generictest", (HttpContext context) =>
         activity?.AddEvent(new ActivityEvent("I have done something"));
     }
 })
-.WithName("GenericTest")
-.WithOpenApi();
+.WithName("GenericTest");
 
 app.Run();

@@ -2,7 +2,6 @@
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
 using Azure.Monitor.OpenTelemetry.Exporter;
-using Azure.Monitor.OpenTelemetry.LiveMetrics;
 
 namespace OTelPlayground;
 
