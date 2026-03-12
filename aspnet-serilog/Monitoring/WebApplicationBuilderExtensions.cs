@@ -25,7 +25,7 @@ public static class WebApplicationBuilderExtensions
     //    });
     //}
 
-    private static string? SettingsGetAzureMonitorConnectionString(IHostApplicationBuilder builder) => builder.Configuration["AzureMonitor:ConnectionString"];
+    private static string? SettingsGetAzureMonitorConnectionString(IHostApplicationBuilder builder) => builder.Configuration[Constants.AzureMonitorConnectionStringAppSetting];
     private static string? EnvGetAzureMonitorConnectionString(IHostApplicationBuilder builder) => builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS_CONNECTION_STRING");
 
     private static bool SendToAzureMonitor(IHostApplicationBuilder builder)
@@ -49,7 +49,7 @@ public static class WebApplicationBuilderExtensions
 
     private static bool EnableOpenTelemetry(IHostApplicationBuilder builder)
     {
-        string? disableOTel = builder.Configuration["DisableOpenTelemetry"];
+        string? disableOTel = builder.Configuration[Constants.DisableOpenTelemetryAppSetting];
         return string.IsNullOrWhiteSpace(disableOTel);
     }
 
