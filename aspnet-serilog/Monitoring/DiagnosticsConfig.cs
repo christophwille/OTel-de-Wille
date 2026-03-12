@@ -13,6 +13,7 @@ public static class DiagnosticsConfig
     public static ActivitySource ActivitySource;
 
 
+    // Set OTel service.name via https://github.com/serilog/serilog-sinks-opentelemetry?tab=readme-ov-file#resource-attributes
     public static void ConfigureDiagnosticsConfig(this WebApplicationBuilder builder)
     {
         var configureItems = builder.Configuration

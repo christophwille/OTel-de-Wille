@@ -1,17 +1,21 @@
-using OpenTelemetry.Resources;
 using OTelWithSerilog.Monitoring;
 using Serilog;
+using Serilog.Extensions.Logging;
 using System.Diagnostics;
 
+// Dashboard: podman run --rm -it -p 18888:18888 -p 4317:18889 mcr.microsoft.com/dotnet/aspire-dashboard:latest
 // Test-URL: https://localhost:7217/weatherforecast
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
+using var startupLoggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: false);
+Microsoft.Extensions.Logging.ILogger logger = startupLoggerFactory.CreateLogger(typeof(Program).FullName!);
 
 var builder = WebApplication.CreateBuilder(args);
 builder.ConfigureDiagnosticsConfig();
 
+// This article can be helpful for imperative configuration: https://signoz.io/blog/opentelemetry-serilog/
 // https://www.nuget.org/packages/Serilog.Sinks.OpenTelemetry/#readme-body-tab
-// The following Serilog:WriteTo in appsettings.json is sufficient to make logs show up in Aspire Dashboard
+// The following minimal Serilog:WriteTo in appsettings.json would be sufficient to make logs show up in Aspire Dashboard
 //{
 //    "Name": "OpenTelemetry"
 //}
@@ -22,7 +26,9 @@ builder.Services.AddSerilog((services, loggerConfiguration) =>
             .Enrich.FromLogContext());
 
 
-builder.AddTracingAndMetrics(() => new(DiagnosticsConfig.ServiceName, DiagnosticsConfig.Version, DiagnosticsConfig.ActivitySource.Name, []));
+builder.AddTracingAndMetrics(
+    () => new(DiagnosticsConfig.ServiceName, DiagnosticsConfig.Version, DiagnosticsConfig.ActivitySource.Name, []),
+    logger);
 
 
 builder.Services.AddOpenApi();

@@ -1,4 +1,6 @@
-﻿using OpenTelemetry.Logs;
+﻿using Azure.Monitor.OpenTelemetry.AspNetCore;
+using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -9,9 +11,7 @@ public record TracingAndMetricsConfiguration(string ServiceName, string ServiceV
 
 public static class WebApplicationBuilderExtensions
 {
-    // NOTE: This is not being picked up (eg service.name, would be eg "unknown_service:OTelWithSerilog.exe")
-    // Set service.name via https://github.com/serilog/serilog-sinks-opentelemetry?tab=readme-ov-file#resource-attributes
-    // Thus: Azure Monitor/AppInsights must be exported also via a Serilog sink
+    //NOTE: This is not being picked up (eg service.name, would be eg "unknown_service:OTelWithSerilog.exe")
     //public static void AddOpenTelemetryLogging(this WebApplicationBuilder builder, Func<ResourceBuilder> resourceBuilderFunc)
     //{
     //    builder.Logging.AddOpenTelemetry(options =>
@@ -25,47 +25,119 @@ public static class WebApplicationBuilderExtensions
     //    });
     //}
 
-    public static void AddTracingAndMetrics(this WebApplicationBuilder builder, Func<TracingAndMetricsConfiguration> configure,
+    private static string? SettingsGetAzureMonitorConnectionString(IHostApplicationBuilder builder) => builder.Configuration["AzureMonitor:ConnectionString"];
+    private static string? EnvGetAzureMonitorConnectionString(IHostApplicationBuilder builder) => builder.Configuration.GetValue<string>("APPLICATIONINSIGHTS_CONNECTION_STRING");
+
+    private static bool SendToAzureMonitor(IHostApplicationBuilder builder)
+    {
+        return !string.IsNullOrWhiteSpace(EnvGetAzureMonitorConnectionString(builder)) ||
+            !string.IsNullOrWhiteSpace(SettingsGetAzureMonitorConnectionString(builder));
+    }
+
+    private static string GetAzureMonitorConnectionString(IHostApplicationBuilder builder)
+    {
+        // Although https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry-configuration?tabs=aspnetcore#connection-string 
+        // says both are ok to set, in practice, using the appsetting connection string throws an exception
+        string? connectionString = SettingsGetAzureMonitorConnectionString(builder);
+        if (!string.IsNullOrWhiteSpace(connectionString)) return connectionString!;
+
+        connectionString = EnvGetAzureMonitorConnectionString(builder);
+        if (!string.IsNullOrWhiteSpace(connectionString)) return connectionString!;
+
+        throw new InvalidOperationException("Azure Monitor Connection String is not set in configuration or environment variables.");
+    }
+
+    private static bool EnableOpenTelemetry(IHostApplicationBuilder builder)
+    {
+        string? disableOTel = builder.Configuration["DisableOpenTelemetry"];
+        return string.IsNullOrWhiteSpace(disableOTel);
+    }
+
+    public static void AddTracingAndMetrics(this WebApplicationBuilder builder,
+        Func<TracingAndMetricsConfiguration> configure,
+        ILogger logger,
         Action<TracerProviderBuilder>? extendTracerProviderBuilder = null)
     {
+        if (!EnableOpenTelemetry(builder))
+        {
+            logger.LogWarning("OpenTelemetry is disabled via configuration. No telemetry will be collected or exported.");
+            return;
+        }
+
         if (configure == null) throw new ArgumentNullException(nameof(configure));
         var options = configure();
 
-        builder.Services.AddOpenTelemetry()
-            .ConfigureResource(r =>
-            {
-                r.AddService(options.ServiceName, serviceVersion: options.ServiceVersion);
-                r.AddAttributes(new Dictionary<string, object>
-                {
-                    ["host.name"] = Environment.MachineName,
-                    ["deployment.environment"] = builder.Environment.EnvironmentName.ToLowerInvariant(),
-                });
-            })
-            .WithTracing(tracerProviderBuilder =>
-            {
-                ConfigureTracerProviderBuilder(tracerProviderBuilder, options);
-
-                if (null != extendTracerProviderBuilder) extendTracerProviderBuilder(tracerProviderBuilder);
-
-                tracerProviderBuilder
-                    .AddOtlpExporter();
-            })
-        .WithMetrics(m =>
+        if (SendToAzureMonitor(builder))
         {
-            m.AddAspNetCoreInstrumentation()
-                .AddOtlpExporter();
+            logger.LogInformation("OpenTelemetry will be configured to export to Azure Monitor");
+
+            // https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry-enable?tabs=aspnetcore#enable-azure-monitor-opentelemetry-for-net-nodejs-python-and-java-applications 
+            // https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/monitor/Azure.Monitor.OpenTelemetry.AspNetCore/README.md
+
+            // This includes: ***Logging***, Tracing, Metrics, Live Metrics, Resource Detectors
+            builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
+            {
+                options.ConnectionString = GetAzureMonitorConnectionString(builder);
+                options.EnableLiveMetrics = true;
+                // options.SamplingRatio = 0.5F;
+            });
+
+            // Adding Custom Resource
+            // Adding Custom ActivitySource to Traces
+            // Adding Additional Instrumentation
+            // Adding Another Exporter
+            builder.Services.ConfigureOpenTelemetryTracerProvider((tracerProviderBuilder) =>
+            {
+                tracerProviderBuilder.ConfigureResource(r => ConfigureResourceBuilder(builder, r, options));
+                ConfigureTracerProviderBuilder(tracerProviderBuilder, options, extendTracerProviderBuilder);
+            });
+
+            builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(ConfigureAspNetCoreInstrumentationOptions);
+            // builder.Services.ConfigureOpenTelemetryMeterProvider((builder) => builder.AddConsoleExporter());
+        }
+        else
+        {
+            logger.LogInformation("OpenTelemetry will be configured to export via standard OTLP protocol");
+
+            builder.Services.AddOpenTelemetry()
+                .ConfigureResource(r => ConfigureResourceBuilder(builder, r, options))
+                .WithTracing(tracerProviderBuilder =>
+                {
+                    ConfigureTracerProviderBuilder(tracerProviderBuilder, options, extendTracerProviderBuilder);
+                    tracerProviderBuilder.AddAspNetCoreInstrumentation(options => ConfigureAspNetCoreInstrumentationOptions(options));
+
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        // eg: tracerProviderBuilder.AddConsoleExporter(); // Warning: creates a lot of noise
+                    }
+
+                    tracerProviderBuilder.AddOtlpExporter();
+                })
+                .WithMetrics(m =>
+                {
+                    m.AddAspNetCoreInstrumentation()
+                        .AddOtlpExporter();
+                });
+        }
+    }
+
+    private static void ConfigureResourceBuilder(WebApplicationBuilder builder, ResourceBuilder r, TracingAndMetricsConfiguration options)
+    {
+        r.AddService(options.ServiceName, serviceVersion: options.ServiceVersion);
+        r.AddAttributes(new Dictionary<string, object>
+        {
+            ["host.name"] = Environment.MachineName,
+            ["deployment.environment"] = builder.Environment.EnvironmentName.ToLowerInvariant(),
         });
     }
 
-    private static void ConfigureTracerProviderBuilder(TracerProviderBuilder tracerProviderBuilder, TracingAndMetricsConfiguration options)
+    private static void ConfigureTracerProviderBuilder(TracerProviderBuilder tracerProviderBuilder, TracingAndMetricsConfiguration options,
+        Action<TracerProviderBuilder>? extendTracerProviderBuilder)
     {
         tracerProviderBuilder
             .AddSource(options.ActivitySourceName)
             .SetErrorStatusOnException()
-            .AddAspNetCoreInstrumentation(options =>
-            {
-                options.RecordException = true;
-            })
+            // builder.AddProcessor<YourProcessorHere>();
             .AddHttpClientInstrumentation()
             .AddEntityFrameworkCoreInstrumentation(options =>
             {
@@ -78,9 +150,23 @@ public static class WebApplicationBuilderExtensions
             });
 
         if (options.Sources is not []) tracerProviderBuilder.AddSource(options.Sources);
+        if (null != extendTracerProviderBuilder) extendTracerProviderBuilder(tracerProviderBuilder);
 
 #if DEBUG
         tracerProviderBuilder.SetSampler(new AlwaysOnSampler());
 #endif
+    }
+
+    private static void ConfigureAspNetCoreInstrumentationOptions(AspNetCoreTraceInstrumentationOptions options)
+    {
+        options.RecordException = true;
+
+        var hcPath = new PathString("/api/health");
+        options.Filter = (httpContext) =>
+        {
+            if (httpContext.Request.Path.Equals(hcPath)) return false;
+
+            return true;
+        };
     }
 }
