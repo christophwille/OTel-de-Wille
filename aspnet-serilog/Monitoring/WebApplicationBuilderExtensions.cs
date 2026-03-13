@@ -1,4 +1,5 @@
 ﻿using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -53,7 +54,24 @@ public static class WebApplicationBuilderExtensions
         return string.IsNullOrWhiteSpace(disableOTel);
     }
 
-    public static void AddTracingAndMetrics(this WebApplicationBuilder builder,
+    public static void AddTracingAndMetricsForWeb(this WebApplicationBuilder builder,
+        Func<TracingAndMetricsConfiguration> configure,
+        ILogger logger,
+        Action<TracerProviderBuilder>? extendTracerProviderBuilder = null)
+    {
+        builder.AddTracingAndMetrics(configureForAspNet: true, configure, logger, extendTracerProviderBuilder);
+    }
+
+    public static void AddTracingAndMetricsForGeneric(this WebApplicationBuilder builder,
+        Func<TracingAndMetricsConfiguration> configure,
+        ILogger logger,
+        Action<TracerProviderBuilder>? extendTracerProviderBuilder = null)
+    {
+        builder.AddTracingAndMetrics(configureForAspNet: false, configure, logger, extendTracerProviderBuilder);
+    }
+
+    private static void AddTracingAndMetrics(this WebApplicationBuilder builder,
+        bool configureForAspNet,
         Func<TracingAndMetricsConfiguration> configure,
         ILogger logger,
         Action<TracerProviderBuilder>? extendTracerProviderBuilder = null)
@@ -67,7 +85,9 @@ public static class WebApplicationBuilderExtensions
         if (configure == null) throw new ArgumentNullException(nameof(configure));
         var options = configure();
 
-        if (SendToAzureMonitor(builder))
+        bool sendToAzureMonitor = SendToAzureMonitor(builder);
+
+        if (configureForAspNet && sendToAzureMonitor)
         {
             logger.LogInformation("OpenTelemetry will be configured to export to Azure Monitor");
 
@@ -104,19 +124,38 @@ public static class WebApplicationBuilderExtensions
                 .WithTracing(tracerProviderBuilder =>
                 {
                     ConfigureTracerProviderBuilder(tracerProviderBuilder, options, extendTracerProviderBuilder);
-                    tracerProviderBuilder.AddAspNetCoreInstrumentation(options => ConfigureAspNetCoreInstrumentationOptions(options));
+
+                    if (configureForAspNet)
+                    {
+                        tracerProviderBuilder.AddAspNetCoreInstrumentation(options => ConfigureAspNetCoreInstrumentationOptions(options));
+                    }
 
                     if (builder.Environment.IsDevelopment())
                     {
                         // eg: tracerProviderBuilder.AddConsoleExporter(); // Warning: creates a lot of noise
                     }
 
-                    tracerProviderBuilder.AddOtlpExporter();
+                    if (sendToAzureMonitor)
+                    {
+                        tracerProviderBuilder.AddAzureMonitorTraceExporter(options => options.ConnectionString = GetAzureMonitorConnectionString(builder));
+                    }
+                    else
+                    {
+                        tracerProviderBuilder.AddOtlpExporter();
+                    }
                 })
                 .WithMetrics(m =>
                 {
-                    m.AddAspNetCoreInstrumentation()
-                        .AddOtlpExporter();
+                    m.AddAspNetCoreInstrumentation();
+
+                    if (sendToAzureMonitor)
+                    {
+                        m.AddAzureMonitorMetricExporter(options => options.ConnectionString = GetAzureMonitorConnectionString(builder));
+                    }
+                    else
+                    {
+                        m.AddOtlpExporter();
+                    }
                 });
         }
     }

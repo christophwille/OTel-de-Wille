@@ -26,7 +26,7 @@ builder.Services.AddSerilog((services, loggerConfiguration) =>
             .Enrich.FromLogContext());
 
 
-builder.AddTracingAndMetrics(
+builder.AddTracingAndMetricsForWeb(
     () => new(DiagnosticsConfig.ServiceName, DiagnosticsConfig.Version, DiagnosticsConfig.ActivitySource.Name, []),
     logger);
 
