@@ -1,8 +1,15 @@
 using EasyNetQ;
 using EnqE2E.Messages;
+using EnqE2E.Monitoring;
+using EnqE2E.Producer;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTracingAndMetrics(
+    configureForAspNet: true,
+    serviceName: DiagnosticsConfig.ServiceName,
+    activitySourceName: DiagnosticsConfig.ActivitySource.Name);
 
 builder.Services.AddOpenApi();
 
@@ -22,7 +29,7 @@ var summaries = new[]
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
-app.MapGet("/weatherforecast", async ([FromServices] IBus bus) =>
+app.MapGet("/enqenque", async ([FromServices] IBus bus) =>
 {
     var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
@@ -38,7 +45,7 @@ app.MapGet("/weatherforecast", async ([FromServices] IBus bus) =>
 
     return forecast;
 })
-.WithName("GetWeatherForecast");
+.WithName("ProduceEnqMessage");
 
 app.Run();
 

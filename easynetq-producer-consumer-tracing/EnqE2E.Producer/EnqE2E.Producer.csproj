@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EnqE2E.Messages\EnqE2E.Messages.csproj" />
+    <ProjectReference Include="..\EnqE2E.Monitoring\EnqE2E.Monitoring.csproj" />
   </ItemGroup>
 
 </Project>

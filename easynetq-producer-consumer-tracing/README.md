@@ -1,5 +1,9 @@
 # OpenTelemetry Tracing with EasyNetQ
 
+Original idea: try to implement https://github.com/EasyNetQ/EasyNetQ/pull/1628#issuecomment-1590759688
+
+Used instead: RabbitMQ Client OTel library.
+
 ## Running RabbitMQ
 
 https://www.rabbitmq.com/docs/download
@@ -14,4 +18,4 @@ http://localhost:15672 with guest/guest
 
 ## Sample Producer
 
-https://localhost:7046/weatherforecast
+https://localhost:7046/enqenque

@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/docs/">
     <File Path="README.md" />
+    <File Path="SampleAspireTrace.png" />
   </Folder>
   <Project Path="EnqE2E.Consumer/EnqE2E.Consumer.csproj" />
   <Project Path="EnqE2E.Messages/EnqE2E.Messages.csproj" />
+  <Project Path="EnqE2E.Monitoring/EnqE2E.Monitoring.csproj" Id="c5eae515-556a-43fd-adcc-195cef99ffda" />
   <Project Path="EnqE2E.Producer/EnqE2E.Producer.csproj" />
 </Solution>

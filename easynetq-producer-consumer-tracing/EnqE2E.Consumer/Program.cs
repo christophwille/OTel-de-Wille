@@ -1,23 +1,18 @@
 ﻿using EasyNetQ;
-using EnqE2E.Messages;
+using EnqE2E.Consumer;
+using EnqE2E.Monitoring;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
-    {
-        services.AddEasyNetQ("host=localhost").UseSystemTextJson();
-    })
-    .Build();
+var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddHostedService<Worker>();
 
-using var scope = host.Services.CreateScope();
-var services = scope.ServiceProvider;
+builder.Services.AddTracingAndMetrics(
+            configureForAspNet: false,
+            serviceName: DiagnosticsConfig.ServiceName,
+            activitySourceName: DiagnosticsConfig.ActivitySource.Name);
 
-var bus = services.GetRequiredService<IBus>();
+builder.Services.AddEasyNetQ("host=localhost").UseSystemTextJson();
 
-await bus.PubSub.SubscribeAsync<SampleMessage>(
-        "my_subscription_id", msg => Console.WriteLine(msg.Text)
-    );
-
-Console.WriteLine("Listening in background. Press any key to exit.");
-Console.Read();
+var host = builder.Build();
+host.Run();
