@@ -1,0 +1,6 @@
+@EnqE2E.Producer_HostAddress = http://localhost:5224
+
+GET {{EnqE2E.Producer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

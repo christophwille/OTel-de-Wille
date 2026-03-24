@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/docs/">
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="EnqE2E.Consumer/EnqE2E.Consumer.csproj" />
+  <Project Path="EnqE2E.Messages/EnqE2E.Messages.csproj" />
+  <Project Path="EnqE2E.Producer/EnqE2E.Producer.csproj" />
+</Solution>
