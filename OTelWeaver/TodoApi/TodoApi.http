@@ -1,0 +1,40 @@
+@host = http://localhost:5080
+
+### Create
+POST {{host}}/todos
+Content-Type: application/json
+
+{ "title": "Read the Weaver docs" }
+
+### Create another
+POST {{host}}/todos
+Content-Type: application/json
+
+{ "title": "Generate C# from the registry" }
+
+### List
+GET {{host}}/todos
+
+### Get one
+GET {{host}}/todos/1
+
+### Update
+PUT {{host}}/todos/1
+Content-Type: application/json
+
+{ "title": "Read the Weaver docs twice" }
+
+### Complete
+POST {{host}}/todos/1/complete
+
+### Delete
+DELETE {{host}}/todos/2
+
+### Not found (sets error.type = not_found)
+GET {{host}}/todos/999
+
+### Validation failure (sets error.type = validation)
+POST {{host}}/todos
+Content-Type: application/json
+
+{ "title": "" }

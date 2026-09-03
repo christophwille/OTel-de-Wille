@@ -1,0 +1,12 @@
+# Signals the app emits that are NOT ours but come from the OpenTelemetry SDK
+# and the ASP.NET Core instrumentation. Importing them from the dependency
+# declared in manifest.yaml lets `weaver registry live-check` validate them
+# instead of reporting every http.* / service.* attribute as unknown.
+imports:
+  entities:
+    - service          # service.name, service.version, service.instance.id
+    - telemetry.sdk    # telemetry.sdk.name / .language / .version
+  spans:
+    - span.http.server # the ASP.NET Core server span (matched by group id)
+  metrics:
+    - http.server.*    # http.server.request.duration etc. from AddAspNetCoreInstrumentation()

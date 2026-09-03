@@ -1,0 +1,69 @@
+# Attribute registry: every custom attribute the ToDo API puts on spans/metrics.
+# Signals (spans, metrics) reference these by `ref:` instead of redefining them.
+groups:
+  - id: registry.todo
+    type: attribute_group
+    display_name: ToDo Attributes
+    brief: Attributes describing operations on ToDo items.
+    attributes:
+      # Imported from the OTel registry (see manifest.yaml); listed here so the
+      # C# code generator emits a constant for it as well.
+      - ref: error.type
+
+      - id: todo.id
+        type: int
+        stability: development
+        brief: Identifier of the ToDo item the operation targets.
+        examples: [1, 42]
+
+      - id: todo.operation
+        type:
+          members:
+            - id: create
+              value: create
+              brief: A new item is created.
+              stability: development
+            - id: list
+              value: list
+              brief: All items are listed.
+              stability: development
+            - id: get
+              value: get
+              brief: A single item is read.
+              stability: development
+            - id: update
+              value: update
+              brief: Title and/or status of an item are changed.
+              stability: development
+            - id: complete
+              value: complete
+              brief: An item is marked done.
+              stability: development
+            - id: delete
+              value: delete
+              brief: An item is removed.
+              stability: development
+        stability: development
+        brief: The business operation performed on the ToDo store.
+        examples: [create, complete]
+
+      - id: todo.status
+        type:
+          members:
+            - id: open
+              value: open
+              brief: Item still needs to be done.
+              stability: development
+            - id: done
+              value: done
+              brief: Item is finished.
+              stability: development
+        stability: development
+        brief: Status of the ToDo item after the operation.
+        examples: [open, done]
+
+      - id: todo.count
+        type: int
+        stability: development
+        brief: Number of items returned by a list operation.
+        examples: [0, 7]

@@ -1,0 +1,9 @@
+# Registry manifest: identifies this custom semantic-convention registry and
+# declares which upstream registries it depends on, so signals can `ref:`
+# their attributes (we use `error.type` from the official OTel conventions).
+name: todo
+description: Semantic conventions for the ToDo Web API sample.
+schema_url: https://example.com/todo/schemas/0.1.0
+dependencies:
+  - schema_url: https://opentelemetry.io/schemas/1.37.0
+    registry_path: https://github.com/open-telemetry/semantic-conventions/archive/refs/tags/v1.37.0.zip[model]

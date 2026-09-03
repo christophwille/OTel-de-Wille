@@ -1,0 +1,60 @@
+# Signals: the spans and metrics the ToDo API emits, and which attributes
+# (from todo-attributes.yaml or the upstream OTel registry) they carry.
+groups:
+  - id: span.todo.operation
+    type: span
+    span_kind: internal
+    stability: development
+    brief: One business operation on the ToDo store (create, list, get, update, complete, delete).
+    note: >
+      Wraps the in-memory store access of every endpoint. Nested under the
+      ASP.NET Core server span. Span name is the group id without the `span.`
+      prefix, i.e. `todo.operation`.
+    attributes:
+      - ref: todo.operation
+        requirement_level: required
+      - ref: todo.id
+        requirement_level:
+          conditionally_required: If the operation targets a single item.
+      - ref: todo.status
+        requirement_level:
+          conditionally_required: If the operation created or changed an item.
+      - ref: todo.count
+        requirement_level:
+          conditionally_required: If the operation is `list`.
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If the operation failed.
+
+  - id: metric.todo.operations
+    type: metric
+    metric_name: todo.operations
+    instrument: counter
+    unit: "{operation}"
+    stability: development
+    brief: Number of ToDo operations performed.
+    attributes:
+      - ref: todo.operation
+        requirement_level: required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: If the operation failed.
+
+  - id: metric.todo.operation.duration
+    type: metric
+    metric_name: todo.operation.duration
+    instrument: histogram
+    unit: s
+    stability: development
+    brief: Duration of ToDo operations.
+    attributes:
+      - ref: todo.operation
+        requirement_level: required
+
+  - id: metric.todo.items.open
+    type: metric
+    metric_name: todo.items.open
+    instrument: updowncounter
+    unit: "{item}"
+    stability: development
+    brief: Number of ToDo items currently not done.
