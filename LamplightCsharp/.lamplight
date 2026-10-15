@@ -1,0 +1,13 @@
+project {
+  base_dir = "./lamplight"
+}
+
+# Lamplight's embedded OTLP/HTTP receiver. ServiceDefaults exports traces and metrics here
+# when LAMPLIGHT_OTLP_ENDPOINT is set (the AppHost sets it on both services).
+datasource "otlp" {
+  endpoint = "http://127.0.0.1:4318"
+
+  # Spans arrive within ~1-2s (Aspire sets OTEL_BSP_SCHEDULE_DELAY=1000). `exactly` checks wait for the
+  # whole window because a push receiver can never prove completeness, so keep it short.
+  observation_window = duration("10s")
+}

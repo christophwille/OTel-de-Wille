@@ -1,0 +1,152 @@
+# Telemetry contracts for the order workflow (Orders.Api -> Inventory.Api).
+# Each test owns its own counter so the default parallel workers cannot disturb each other's metric delta.
+
+test "create_order" {
+  tags = ["orders", "smoke"]
+
+  step "create" {
+    http_request {
+      method = "POST"
+      url    = "${var.BASE_URL}/orders"
+      headers = {
+        "content-type" = "application/json"
+      }
+      body = jsonencode({ sku = "WIDGET-1", quantity = 2 })
+    }
+
+    outputs = {
+      order_id = response.json.orderId
+    }
+
+    check "order accepted" {
+      response = {
+        "created"      = response.status_code == 201
+        "has order id" = response.json.orderId != null
+        "status"       = response.json.status == "created"
+      }
+    }
+
+    check "orders service recorded the domain operation" {
+      spans {
+        matching = (
+          resource["service.name"] == "orders" &&
+          span.name == "create order"
+        )
+        assertions = {
+          "outcome is created" = span.attributes["order.status"] == "created"
+          "no error"           = span.status != "error"
+        }
+        exactly = 1
+      }
+    }
+
+    check "trace context survived the hop to inventory" {
+      spans {
+        matching = (
+          resource["service.name"] == "inventory" &&
+          span.name == "reserve stock"
+        )
+        assertions = {
+          "stock was reserved" = span.attributes["inventory.result"] == "reserved"
+        }
+        exactly = 1
+      }
+    }
+
+    check "outbound call was auto-instrumented" {
+      spans {
+        matching = (
+          resource["service.name"] == "orders" &&
+          span.kind == "client"
+        )
+        assertions = {
+          "inventory answered 200" = span.attributes["http.response.status_code"] == 200
+        }
+        exactly = 1
+      }
+    }
+
+    check "orders.created counter moved by one" {
+      metrics {
+        query = "orders_created_total"
+        assertions = {
+          "increments exactly once" = metric.delta == 1
+        }
+        exactly = 1
+      }
+    }
+  }
+
+  step "read_back" {
+    http_request {
+      method = "GET"
+      url    = "${var.BASE_URL}/orders/${steps.create.outputs.order_id}"
+    }
+
+    check "order is retrievable" {
+      response = {
+        "found"   = response.status_code == 200
+        "created" = response.json.status == "created"
+      }
+    }
+  }
+}
+
+test "reject_order_out_of_stock" {
+  tags = ["orders"]
+
+  step "create" {
+    http_request {
+      method = "POST"
+      url    = "${var.BASE_URL}/orders"
+      headers = {
+        "content-type" = "application/json"
+      }
+      body = jsonencode({ sku = "GADGET-7", quantity = 1 })
+    }
+
+    check "order rejected" {
+      response = {
+        "conflict" = response.status_code == 409
+        "status"   = response.json.status == "rejected"
+      }
+    }
+
+    check "rejection is a business outcome, not an error" {
+      spans {
+        matching = (
+          resource["service.name"] == "orders" &&
+          span.name == "create order"
+        )
+        assertions = {
+          "outcome is rejected"   = span.attributes["order.status"] == "rejected"
+          "span not marked error" = span.status != "error"
+        }
+        exactly = 1
+      }
+    }
+
+    check "inventory reported insufficient stock" {
+      spans {
+        matching = (
+          resource["service.name"] == "inventory" &&
+          span.name == "reserve stock"
+        )
+        assertions = {
+          "insufficient" = span.attributes["inventory.result"] == "insufficient"
+        }
+        exactly = 1
+      }
+    }
+
+    check "orders.rejected counter moved by one" {
+      metrics {
+        query = "orders_rejected_total"
+        assertions = {
+          "increments exactly once" = metric.delta == 1
+        }
+        exactly = 1
+      }
+    }
+  }
+}

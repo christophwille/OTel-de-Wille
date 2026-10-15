@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LamplightCsharp.AppHost/LamplightCsharp.AppHost.csproj" />
+  <Project Path="LamplightCsharp.ServiceDefaults/LamplightCsharp.ServiceDefaults.csproj" />
+  <Project Path="Orders.Api/Orders.Api.csproj" />
+  <Project Path="Inventory.Api/Inventory.Api.csproj" />
+</Solution>

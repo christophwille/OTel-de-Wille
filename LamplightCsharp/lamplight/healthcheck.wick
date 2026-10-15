@@ -1,0 +1,21 @@
+variable "BASE_URL" {
+  type    = string
+  default = "http://localhost:5180"
+}
+
+test "healthcheck" {
+  tags = ["smoke"]
+
+  step "health" {
+    http_request {
+      method = "GET"
+      url    = "${var.BASE_URL}/health"
+    }
+
+    check "healthy" {
+      response = {
+        "status code" = response.status_code == 200
+      }
+    }
+  }
+}

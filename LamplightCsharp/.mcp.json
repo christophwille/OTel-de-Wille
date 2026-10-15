@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "lamplight": {
+      "type": "stdio",
+      "command": "lamplight",
+      "args": [
+        "mcp",
+        "--working-dir",
+        "."
+      ],
+      "env": {}
+    }
+  }
+}
